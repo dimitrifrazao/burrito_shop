@@ -8,8 +8,10 @@ import {
   burritoListInterface,
   orderItemDataInterface,
 } from "./database";
+import cors from "cors";
 
 const app = express();
+app.use(cors());
 
 // burrito list cache and burrito id set
 let cachedBurritoData: burritoListInterface[];
