@@ -11,34 +11,34 @@ import {
 import cors from "cors";
 
 const app = express();
-app.use(cors());
-
-// burrito list cache and burrito id set
-let cachedBurritoData: burritoListInterface[];
-let burritoIdSet: Set<number> = new Set();
 
 // Middleware
+app.use(cors());
 app.use(bodyParser.json());
 
-async function getBurritoListJSON() {
-  if (!cachedBurritoData) {
+// burrito list cache data
+let burritoListCachedData: burritoListInterface[];
+let burritoIdSet: Set<number> = new Set();
+
+async function getBurritoListCached() {
+  if (!burritoListCachedData) {
     // future: update cache when burritoList database is updated
-    cachedBurritoData = await getBurritoList();
-    cachedBurritoData.forEach((element) => {
+    burritoListCachedData = await getBurritoList();
+    burritoListCachedData.forEach((element) => {
       burritoIdSet.add(element.id);
     });
   }
-  return cachedBurritoData;
+  return burritoListCachedData;
 }
 
 // get Routes
 app.get("/api/v1/burrito", async (req, res) => {
   try {
-    const rows = await getBurritoListJSON();
+    const rows = await getBurritoListCached();
     res.json(rows);
   } catch (error) {
     console.log(error);
-    res.status(500).send("server failed to get burrito list");
+    res.status(500).send("server failed to get burrito list.");
   }
 });
 
@@ -48,29 +48,29 @@ app.get("/api/v1/orders", async (req, res) => {
     res.json(rows);
   } catch (error) {
     console.log(error);
-    res.status(500).send("server failed to get orders");
+    res.status(500).send("server failed to get orders.");
   }
 });
 
 app.get("/api/v1/orders/:orderId", async (req, res) => {
   const orderId = req.params.orderId;
   if (orderId === undefined) {
-    res.status(400).send("Request does not contain an order id");
+    res.status(400).send("Request does not contain an order id.");
   } else {
     const id = Number(orderId);
     if (isNaN(id)) {
-      res.status(400).send("Request order id is not a number");
+      res.status(400).send("Request order id is not a number.");
     } else {
       try {
         const rows = await getOrderDetail(id);
         if (rows.length === 0) {
-          res.status(400).send("Order id does not exist");
+          res.status(400).send("Order id does not exist.");
         } else {
           res.json(rows);
         }
       } catch (error) {
         console.log(error);
-        res.status(500).send("server failed to get order detail");
+        res.status(500).send("server failed to get order detail.");
       }
     }
   }
@@ -79,44 +79,70 @@ app.get("/api/v1/orders/:orderId", async (req, res) => {
 // post Routes
 app.post("/api/v1/orders", async (req, res) => {
   if (req.body === undefined) {
-    res.status(400).send("Body data is undefined");
+    res.status(400).send("Body data is undefined.");
   } else {
+    // make sure we cache our burrito list
     try {
-      await getBurritoListJSON();
+      await getBurritoListCached();
     } catch (error) {
       console.log(error);
-      res.status(500).send("server failed to get burrito list");
+      res.status(500).send("server failed to get burrito list.");
     }
+    // validate order data
     let isValid = true;
     let data: orderItemDataInterface[] = [];
+    let bSet: Set<number> = new Set();
+    let errorMessage: string = "";
     for (let i = 0; i < req.body.length; i++) {
       const burrito_id = Number(req.body[i].burrito_id);
       const count = Number(req.body[i].count);
-      if (
-        isNaN(burrito_id) ||
-        isNaN(count) ||
-        burrito_id < 1 ||
-        count < 1 ||
-        !burritoIdSet.has(burrito_id)
-      ) {
+      if (isNaN(burrito_id)) {
         isValid = false;
+        errorMessage = "burrito id is not a number.";
         break;
       }
+      if (isNaN(count)) {
+        isValid = false;
+        errorMessage = "count is not a number.";
+        break;
+      }
+      if (!burritoIdSet.has(burrito_id)) {
+        isValid = false;
+        errorMessage = "invalid burrito id.";
+        break;
+      }
+      if (count < 1) {
+        isValid = false;
+        errorMessage = "count can't be negative or zero.";
+        break;
+      }
+      if (bSet.has(burrito_id)) {
+        isValid = false;
+        errorMessage = "order has duplicate burrito ids.";
+        break;
+      }
+      bSet.add(burrito_id);
       data.push({ burrito_id: burrito_id, count: count });
     }
-    if (isValid === true && data.length > 0) {
+    if (data.length === 0) {
+      isValid = false;
+      errorMessage = "order data is empty.";
+    }
+    // end of validation
+    if (isValid === true) {
       try {
         const result = await createNewOrder(data);
         res.status(201).json(result);
       } catch (error) {
         console.log(error);
-        res.status(500).send("server failed to create new order");
+        res.status(500).send("server failed to create new order.");
       }
     } else {
-      const errorMessage = isValid
-        ? "orderData is empty"
-        : "orderData has invalid data";
-      res.status(400).send(errorMessage); // needs to be more descriptive
+      if (errorMessage.length === 0) {
+        res.status(500).send("server failed to generate error message.");
+      } else {
+        res.status(400).send(errorMessage);
+      }
     }
   }
 });
