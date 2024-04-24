@@ -10,7 +10,7 @@ CREATE TABLE burritoList(
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(25) NOT NULL,
     size ENUM('S', 'M', 'L', 'XL') NOT NULL,
-    price DECIMAL NOT NULL
+    price DECIMAL(10,2) NOT NULL
 );
 
 CREATE TABLE orders (
@@ -29,20 +29,20 @@ CREATE TABLE orderItems (
 
 INSERT INTO burritoList (name, size, price)
 VALUES
-('Chicken', 'S', 3.0),
-('Chicken', 'M', 4.0),
-('Chicken', 'L', 5.0),
-('Beef', 'S', 4.0),
-('Beef', 'M', 4.5),
-('Beef', 'L', 5.0),
-('Beef', 'XL', 5.5),
-('Pork', 'S', 3.5),
-('Pork', 'M', 4.5),
-('Pork', 'L', 5.5),
-('Pork', 'XL', 6),
-('Breakfast', 'S', 2.0),
-('Breakfast', 'M', 3.0),
-('Breakfast', 'L', 4.0);
+('Chicken', 'S', 3.5),
+('Chicken', 'M', 4.5),
+('Chicken', 'L', 5.5),
+('Beef', 'S', 4.1),
+('Beef', 'M', 4.1),
+('Beef', 'L', 5.1),
+('Beef', 'XL', 5.1),
+('Pork', 'S', 3.3),
+('Pork', 'M', 4.3),
+('Pork', 'L', 5.3),
+('Pork', 'XL', 6.3),
+('Breakfast', 'S', 2.2),
+('Breakfast', 'M', 3.2),
+('Breakfast', 'L', 4.2);
 
 INSERT INTO orders ()
 VALUES

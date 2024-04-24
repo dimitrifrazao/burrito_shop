@@ -7,8 +7,7 @@
     "test": "npx tsc && jest --forceExit",
     "tsc": "npx tsc",
     "start": "node dist/server.js",
-    "dev": "npm run tsc && npm run start",
-    "auth": "nodemon index.js"
+    "dev": "npm run tsc && npm run start"
   },
   "author": "dimitri frazao",
   "license": "ISC",
