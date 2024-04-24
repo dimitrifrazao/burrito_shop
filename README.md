@@ -84,7 +84,8 @@ Each order has a unique id and a total price.
 A POST on this end point will add an order to the order list.  
 You need to pass a json file in the request body that represents the order data.  
 The order data is just a list of order items.  
-Each order item has a burrito id (from the burrito list) and a count number.
+Each order item has a burrito id (from the burrito list) and a count number.  
+The response will be the same as a GET but showing only the newly created order.
 
 ```
 [

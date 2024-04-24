@@ -4,7 +4,7 @@
   "description": "simple burrito shop rest api",
   "main": "index.js",
   "scripts": {
-    "test": "npx tsc && jest",
+    "test": "npx tsc && jest --forceExit",
     "tsc": "npx tsc",
     "start": "node dist/server.js",
     "dev": "npm run tsc && npm run start"

@@ -1,12 +1,13 @@
 import express, { Request, Response, NextFunction } from "express";
 import bodyParser from "body-parser";
+import { Order, OrderError } from "./order";
 import {
   getBurritoList,
   getOrders,
+  getOrderById,
   getOrderDetail,
   createNewOrder,
   burritoListInterface,
-  orderItemDataInterface,
 } from "./database";
 import cors from "cors";
 
@@ -81,67 +82,27 @@ app.post("/api/v1/orders", async (req, res) => {
   if (req.body === undefined) {
     res.status(400).send("Body data is undefined.");
   } else {
-    // make sure we cache our burrito list
+    // make sure we cache our burrito id set
     try {
       await getBurritoListCached();
     } catch (error) {
       console.log(error);
       res.status(500).send("server failed to get burrito list.");
     }
-    // validate order data
-    let isValid = true;
-    let data: orderItemDataInterface[] = [];
-    let bSet: Set<number> = new Set();
-    let errorMessage: string = "";
-    for (let i = 0; i < req.body.length; i++) {
-      const burrito_id = Number(req.body[i].burrito_id);
-      const count = Number(req.body[i].count);
-      if (isNaN(burrito_id)) {
-        isValid = false;
-        errorMessage = "burrito id is not a number.";
-        break;
-      }
-      if (isNaN(count)) {
-        isValid = false;
-        errorMessage = "count is not a number.";
-        break;
-      }
-      if (!burritoIdSet.has(burrito_id)) {
-        isValid = false;
-        errorMessage = "invalid burrito id.";
-        break;
-      }
-      if (count < 1) {
-        isValid = false;
-        errorMessage = "count can't be negative or zero.";
-        break;
-      }
-      if (bSet.has(burrito_id)) {
-        isValid = false;
-        errorMessage = "order has duplicate burrito ids.";
-        break;
-      }
-      bSet.add(burrito_id);
-      data.push({ burrito_id: burrito_id, count: count });
-    }
-    if (data.length === 0) {
-      isValid = false;
-      errorMessage = "order data is empty.";
-    }
-    // end of validation
-    if (isValid === true) {
-      try {
-        const result = await createNewOrder(data);
-        res.status(201).json(result);
-      } catch (error) {
+    // create order
+    let order;
+    try {
+      order = new Order(req);
+      order.validateBurritoIds(burritoIdSet);
+      const result = await createNewOrder(order);
+      const rows = await getOrderById(result.insertId);
+      res.status(201).json(rows);
+    } catch (error) {
+      if (error instanceof OrderError) {
+        res.status(400).send(error.message);
+      } else {
         console.log(error);
         res.status(500).send("server failed to create new order.");
-      }
-    } else {
-      if (errorMessage.length === 0) {
-        res.status(500).send("server failed to generate error message.");
-      } else {
-        res.status(400).send(errorMessage);
       }
     }
   }

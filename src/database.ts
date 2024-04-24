@@ -1,5 +1,6 @@
 import mysql, { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import dotenv from "dotenv";
+import { Order } from "./order";
 
 dotenv.config();
 
@@ -41,14 +42,23 @@ export async function getOrders() {
   return rows;
 }
 
+export async function getOrderById(id: number) {
+  const [rows, packet] = await pool.query<orderInterface[]>(
+    `
+  SELECT order_id, SUM(oi.count * bl.price) AS total
+  FROM orderItems oi
+  JOIN burritoList bl ON oi.burrito_id = bl.id
+  WHERE order_id in (SELECT id FROM orders) AND order_id = ?
+  GROUP BY order_id
+`,
+    [id]
+  );
+  return rows;
+}
+
 export interface orderItemInterface extends RowDataPacket {
   burrito_id: number;
   order_id: number;
-  count: number;
-}
-
-export interface orderItemDataInterface {
-  burrito_id: number;
   count: number;
 }
 
@@ -70,14 +80,15 @@ VALUES
 (?,?,?);
 `;
 
-export async function createNewOrder(data: orderItemDataInterface[]) {
+export async function createNewOrder(order: Order) {
   const [result] = await pool.query<ResultSetHeader>(`
   INSERT INTO orders ()
   VALUES
   ();`);
 
-  for (let i = 0; i < data.length; i++) {
-    const attributes = [data[i].burrito_id, result.insertId, data[i].count];
+  for (let i = 0; i < order.getSize(); i++) {
+    let data = order.getData(i);
+    const attributes = [data.burrito_id, result.insertId, data.count];
     await pool.query(insertOrderItemQuery, attributes);
   }
   return result;
