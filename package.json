@@ -2,12 +2,13 @@
   "name": "burrito_shop",
   "version": "1.0.0",
   "description": "simple burrito shop rest api",
-  "main": "index.js",
+  "main": "dist/app.js",
   "scripts": {
     "test": "npx tsc && jest --forceExit",
     "tsc": "npx tsc",
     "start": "node dist/server.js",
-    "dev": "npm run tsc && npm run start"
+    "dev": "npm run tsc && npm run start",
+    "auth": "nodemon index.js"
   },
   "author": "dimitri frazao",
   "license": "ISC",
