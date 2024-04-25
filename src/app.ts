@@ -1,6 +1,11 @@
 import express, { Request, Response, NextFunction } from "express";
 import bodyParser from "body-parser";
 import { Order, OrderError } from "./order";
+import cors from "cors";
+import passport from "passport";
+import session from "express-session";
+import { authSetup, User } from "./auth";
+import dotenv from "dotenv";
 import {
   getBurritoList,
   getOrders,
@@ -9,13 +14,74 @@ import {
   createNewOrder,
   burritoListInterface,
 } from "./database";
-import cors from "cors";
+
+dotenv.config();
 
 const app = express();
+
+const secret = process.env.SESSION_SECRET || "some-secret";
+if (secret === undefined) throw Error("must define .env secret");
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+app.use(
+  session({
+    secret: secret,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+// authentication
+authSetup();
+const skipAuth: boolean = process.env.SKIP_AUTH === "true";
+
+function isAuthenticated(req: Request, res: Response, next: Function) {
+  if (skipAuth || req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect("/auth");
+}
+
+app.get("/auth", (req, res) => {
+  res.send(`<a href="/auth/google">Authenticate with Google</a>`);
+});
+
+app.get(
+  "/auth/google",
+  passport.authenticate("google", { scope: ["email", "profile"] })
+);
+
+app.get(
+  "/auth/google/callback",
+  passport.authenticate("google", {
+    successRedirect: "/auth/success",
+    failureRedirect: "/auth/failed",
+  })
+);
+
+app.get("/auth/success", (req: Request, res) => {
+  const user: User = req.user as User;
+  res.status(200).send(`Welcome ${user.displayName}`);
+});
+
+app.get("/auth/failed", (req: Request, res) => {
+  res.status(401).send(`<p>Authentication failed.</p>
+  <a href="/auth/google">Authenticate with Google</a>`);
+});
+
+app.get("/auth/logout", (req, res) => {
+  req.logout(function (error) {
+    if (error) console.log(error);
+  });
+  req.session.destroy(function (error) {
+    if (error) console.log(error);
+    res.send("good bye!");
+  });
+});
 
 // burrito list cache data
 let burritoListCachedData: burritoListInterface[];
@@ -32,7 +98,7 @@ async function getBurritoListCached() {
   return burritoListCachedData;
 }
 
-// get Routes
+// burrito shop Routes
 app.get("/api/v1/burrito", async (req, res) => {
   try {
     const rows = await getBurritoListCached();
@@ -43,7 +109,7 @@ app.get("/api/v1/burrito", async (req, res) => {
   }
 });
 
-app.get("/api/v1/orders", async (req, res) => {
+app.get("/api/v1/orders", isAuthenticated, async (req, res) => {
   try {
     const rows = await getOrders();
     res.json(rows);
@@ -53,7 +119,7 @@ app.get("/api/v1/orders", async (req, res) => {
   }
 });
 
-app.get("/api/v1/orders/:orderId", async (req, res) => {
+app.get("/api/v1/orders/:orderId", isAuthenticated, async (req, res) => {
   const orderId = req.params.orderId;
   if (orderId === undefined) {
     res.status(400).send("Request does not contain an order id.");
@@ -77,8 +143,7 @@ app.get("/api/v1/orders/:orderId", async (req, res) => {
   }
 });
 
-// post Routes
-app.post("/api/v1/orders", async (req, res) => {
+app.post("/api/v1/orders", isAuthenticated, async (req, res) => {
   if (req.body === undefined) {
     res.status(400).send("Body data is undefined.");
   } else {
@@ -111,7 +176,7 @@ app.post("/api/v1/orders", async (req, res) => {
 // Default error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
-  res.status(500).send("Something broke 💩");
+  res.status(500).send("Something broke!");
 });
 
 export default app;

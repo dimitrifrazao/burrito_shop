@@ -12,6 +12,7 @@ This backend example uses the following tech:
 - jest for unit testing.
 - mysql2 to connect to mysql.
 - docker.
+- passport google oauth20
 
 ## Installing and running
 
@@ -28,8 +29,13 @@ MYSQL_USER = 'root'
 MYSQL_PASSWORD = ''  
 MYSQL_DATABASE = 'burritoDB'
 
-By default the burrito_shop app serves on port 8080.  
-You can have the app serving on a different port by adding a PORT variable to your .env file, ex:  
+When making an order there's a limit of 100 per burrito.  
+You can change this by setting this .env variable, ex:  
+COUNT_LIMIT = 50
+
+By default the burrito_shop app serves on localhost port 8080.  
+You can change the host and port by adding these variables in your .env file:  
+HOST = 127.0.0.1  
 PORT = 5000
 
 To install node packages: `npm install`  
@@ -43,6 +49,30 @@ To run jest tests: `npm test`
 The app uses a mysql database.  
 If you want to test this app without using docker you'll need to install [mysql](https://www.mysql.com/).  
 Use the sql/schema.sql file to create the burritoDB database.
+
+## Authentication
+
+The app requires a google authentication for order and order detail end points.
+
+First, you'll need to create a [google OAuth 2.0 credential](https://developers.google.com/identity/protocols/oauth2).  
+When setting your credential redirect path, make sure to set your host and port:  
+`http://{your host}:{your port}/auth/google/callback"`
+
+In your .env file add a client id and client secret from your OAuth 2.0 credential:  
+GOOGLE_CLIENT_ID = "{client id}"  
+GOOGLE_CLIENT_SECRET = "{client secret}"
+
+In your .env file make sure to define the host and port used in your redirect path, ex:  
+REDIRECT_HOST = localhost  
+REDIRECT_PORT = 3000
+
+You also need to define a session secret in your .env file:  
+SESSION_SECRET = "some secret word"
+
+You can disable authentication when running tests by setting this .env variable to true:  
+SKIP_AUTH = true
+
+NOTE: do not update passport. [There's a bug on version 6 that causes a crash](https://github.com/jaredhanson/passport/issues/907).
 
 ## Docker
 
@@ -58,6 +88,24 @@ You can also build the image from the dockerfile in this project:
 Note: the image is just for the app. If you want docker to also launch mysql then run docker-compose.  
 First, make sure you have the app image (either build or clone as mentioned above).  
 To launch the docker-compose run: `docker-compose up`
+
+## .env file variables
+
+```
+HOST
+PORT
+MYSQL_HOST
+MYSQL_USER
+MYSQL_PASSWORD
+MYSQL_DATABASE
+COUNT_LIMIT (optional)
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+SESSION_SECRET
+REDIRECT_HOST
+REDIRECT_PORT
+SKIP_AUTH
+```
 
 ## API
 
@@ -135,3 +183,14 @@ The detail list is composed of order items.
     }
 ]
 ```
+
+## To do
+
+- add more jest tests.
+- make a more robust user input validation.
+- add payment middleware.
+- store user auth in database.
+- show only user orders when using orders endpoint.
+- admin endpoint to modify burrito list?
+- option for users to change order detail.
+- drop passport and use google OAuth 2.0 api directly.
