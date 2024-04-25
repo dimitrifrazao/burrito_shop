@@ -35,8 +35,8 @@ COUNT_LIMIT = 50
 
 By default the burrito_shop app serves on localhost port 8080.  
 You can change the host and port by adding these variables in your .env file:  
-HOST = 127.0.0.1  
-PORT = 5000
+HOST = localhost
+PORT = 8080
 
 To install node packages: `npm install`  
 To build the typescript files into dist: `npm run tsc`  
@@ -64,7 +64,7 @@ GOOGLE_CLIENT_SECRET = "{client secret}"
 
 In your .env file make sure to define the host and port used in your redirect path, ex:  
 REDIRECT_HOST = localhost  
-REDIRECT_PORT = 3000
+REDIRECT_PORT = 8080
 
 You also need to define a session secret in your .env file:  
 SESSION_SECRET = "some secret word"
@@ -79,14 +79,12 @@ NOTE: do not update passport. [There's a bug on version 6 that causes a crash](h
 First make sure you have [docker](https://www.docker.com/) installed.  
 I recommend downloading [docker desktop](https://www.docker.com/products/docker-desktop/).
 
-To clone this app docker image run: `docker pull dimitrifrazao/burrito_shop:latest`  
-To run the image: `docker run dimitrifrazao/burrito_shop:latest`
+You can find the burrito shop app & mysql images at my [docker hub](https://hub.docker.com/repositories/dimitrifrazao)
 
-You can also build the image from the dockerfile in this project:  
-`docker build . -t dimitrifrazao/burrito_shop:latest`
+To clone the app docker image run: `docker pull dimitrifrazao/burrito_shop-web_app`  
+To clone the mysql docker image run: `docker pull dimitrifrazao/burrito_shop-mysql`
 
-Note: the image is just for the app. If you want docker to also launch mysql then run docker-compose.  
-First, make sure you have the app image (either build or clone as mentioned above).  
+You can also set your .env file and build the docker compose yml file.  
 To launch the docker-compose run: `docker-compose up`
 
 ## .env file variables
