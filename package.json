@@ -2,7 +2,7 @@
   "name": "burrito_shop",
   "version": "1.0.0",
   "description": "simple burrito shop rest api",
-  "main": "dist/app.js",
+  "main": "dist/",
   "scripts": {
     "test": "npx tsc && jest --forceExit",
     "tsc": "npx tsc",

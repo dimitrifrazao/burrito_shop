@@ -5,9 +5,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const GoogleStrategy = passportGoogle.Strategy;
-const HOST = process.env.REDIRECT_HOST || "localhost";
-const PORT = process.env.REDIRECT_PORT || "3000";
-const callbackURL = `http://${HOST}:${PORT}/auth/google/callback`;
 
 export interface User {
   id: string;
@@ -23,7 +20,7 @@ export function authSetup() {
       {
         clientID: process.env.GOOGLE_CLIENT_ID || "",
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-        callbackURL: callbackURL,
+        callbackURL: process.env.CALLBACK_URL || "",
         passReqToCallback: true,
       },
       (
